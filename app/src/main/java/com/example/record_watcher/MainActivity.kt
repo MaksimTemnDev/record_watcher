@@ -12,9 +12,10 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Card
-import androidx.compose.material.Icon
-import androidx.compose.material.Text
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -29,6 +30,7 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -65,8 +67,9 @@ class MainActivity : ComponentActivity() {
                         )
                     )
             ) {
-                menuBuild(items = mailList, page)
                 var pageNum = getPageAmount(mailList)
+                pageSearch(pageNum, page)
+                menuBuild(items = mailList, page)
                 navbar(pageNum, page)
             }
         }
@@ -198,6 +201,52 @@ fun menuElement(item: MailModel) {
     }
 }
 
+
+@Composable
+fun pageSearch(pageNum: Int, page: MutableState<Int>) {
+
+    var text = remember { mutableStateOf("") }
+
+    val change: (String) -> Unit = { it ->
+        if (!it.contains(" ") && it != "" && !it.contains("\n") && !it.contains(".") && !it.contains(
+                ","
+            ) && !it.contains("-")
+        ) {
+            if (it.toInt() < 1) {
+                text.value = "1"
+            } else if (it.toInt() > pageNum) {
+                text.value = pageNum.toString()
+            } else {
+                text.value = it
+            }
+            page.value = text.value.toInt()
+        } else {
+            text.value = ""
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth(0.24f)
+            .fillMaxHeight(0.07f)
+    ) {
+        TextField(
+            value = text.value,
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
+            onValueChange = change,
+            trailingIcon = {
+                Icon(
+                    painter = painterResource(id = R.drawable.baseline_find_in_page_24),
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(14.dp)
+                )
+            }
+        )
+    }
+}
+
 @Composable
 fun navbar(num: Int, pageNum: MutableState<Int>) {
     Box(
@@ -220,7 +269,7 @@ fun navbar(num: Int, pageNum: MutableState<Int>) {
                     .background(Color.Black)
                     .padding(vertical = 3.dp)
                     .clickable {
-                        if(pageNum.value>1){
+                        if (pageNum.value > 1) {
                             pageNum.value--
                         }
                     }
@@ -244,7 +293,15 @@ fun navbar(num: Int, pageNum: MutableState<Int>) {
                         .clickable {
                             pageNum.value = i
                         }) {
-                        Text(text = i.toString(), fontSize = 17.sp, color = if (pageNum.value == i) {Color.White} else {Color.Black})
+                        Text(
+                            text = i.toString(),
+                            fontSize = 17.sp,
+                            color = if (pageNum.value == i) {
+                                Color.White
+                            } else {
+                                Color.Black
+                            }
+                        )
                     }
                 }
             }
@@ -256,7 +313,7 @@ fun navbar(num: Int, pageNum: MutableState<Int>) {
                     .background(Color.Black)
                     .padding(vertical = 3.dp)
                     .clickable {
-                        if(pageNum.value<num){
+                        if (pageNum.value < num) {
                             pageNum.value++
                         }
                     }
@@ -285,7 +342,7 @@ fun getCurrentList(num: Int, mailList: List<MailModel>): List<MailModel> {
             bufferList.add(mailList[i])
         }
     } else {
-        for (i in (num-1) * 10..num * 10 - 1) {
+        for (i in (num - 1) * 10..num * 10 - 1) {
             bufferList.add(mailList[i])
         }
     }
