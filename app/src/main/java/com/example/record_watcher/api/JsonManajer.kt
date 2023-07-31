@@ -22,11 +22,11 @@ class JsonManajer {
 
     private fun parseData(result: String, mailList: MutableState<List<MailModel>>){
         val mainObject = JSONObject(result)
-        val list = parseDays(mainObject)
+        val list = parseEntities(mainObject)
         mailList.value = list
     }
 
-    private fun parseDays(mainObject: JSONObject): List<MailModel>{
+    private fun parseEntities(mainObject: JSONObject): List<MailModel>{
         val list = ArrayList<MailModel>()
         val values = mainObject.getJSONArray("result")
         for (i in 0 until values.length()){

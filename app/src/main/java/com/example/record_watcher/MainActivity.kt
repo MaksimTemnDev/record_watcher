@@ -44,15 +44,20 @@ import java.util.*
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        //create a connection
         val manager = JsonManajer()
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
+        //visual part
         setContent {
+            //list of all posts
             val mailList = remember {
                 mutableStateOf(listOf<MailModel>())
             }
+            //current page number
             val page = remember {
                 mutableStateOf(1)
             }
+            //parse data by connection
             manager.connect(applicationContext, mailList)
             val window = this.window
             window.statusBarColor = ContextCompat.getColor(this, R.color.black)
@@ -69,9 +74,13 @@ class MainActivity : ComponentActivity() {
                         )
                     )
             ) {
+                //the number of pages with posts
                 var pageNum = getPageAmount(mailList)
+                //searchLine(page number)
                 pageSearch(pageNum, page)
-                menuBuild(items = mailList, page)
+                //posts list
+                postsBuild(items = mailList, page)
+                //navigation
                 navbar(pageNum, page)
             }
         }
@@ -79,7 +88,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun menuBuild(
+fun postsBuild(
     items: MutableState<List<MailModel>>,
     page: MutableState<Int>,
 ) {
@@ -98,7 +107,7 @@ fun menuBuild(
             itemsIndexed(
                 visible.value
             ) { _, item ->
-                menuElement(item)
+                postElement(item)
             }
         }
     }
@@ -106,7 +115,7 @@ fun menuBuild(
 
 
 @Composable
-fun menuElement(item: MailModel) {
+fun postElement(item: MailModel) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -210,6 +219,7 @@ fun pageSearch(pageNum: Int, page: MutableState<Int>) {
     var text = remember { mutableStateOf("") }
 
     val change: (String) -> Unit = { it ->
+        //check that input datat is correct
         if (!it.contains(" ") && it != "" && !it.contains("\n") && !it.contains(".") && !it.contains(
                 ","
             ) && !it.contains("-")
@@ -221,6 +231,7 @@ fun pageSearch(pageNum: Int, page: MutableState<Int>) {
             } else {
                 text.value = it
             }
+            //change value of showen page
             page.value = text.value.toInt()
         } else {
             text.value = ""
@@ -289,6 +300,7 @@ fun navbar(num: Int, pageNum: MutableState<Int>) {
                     .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(25.dp)
             ) {
+                //scope of pages numbers
                 for (i in 1..num) {
                     Box(modifier = Modifier
                         .padding(top = 6.dp)
@@ -331,12 +343,7 @@ fun navbar(num: Int, pageNum: MutableState<Int>) {
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview() {
-
-}
-
+//get the posts that should be shown now
 fun getCurrentList(num: Int, mailList: List<MailModel>): List<MailModel> {
     val bufferList = mutableListOf<MailModel>()
     if (num == 0) {
@@ -351,6 +358,7 @@ fun getCurrentList(num: Int, mailList: List<MailModel>): List<MailModel> {
     return bufferList
 }
 
+//total amount of pages
 fun getPageAmount(mailList: MutableState<List<MailModel>>): Int {
     val size = mailList.value.size
     var pageAmount = size / 10
