@@ -1,7 +1,9 @@
 package com.example.record_watcher
 
+import android.content.Context
 import android.content.pm.ActivityInfo
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -15,12 +17,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Send
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,7 +29,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -52,6 +48,9 @@ class MainActivity : ComponentActivity() {
             //list of all posts
             val mailList = remember {
                 mutableStateOf(listOf<MailModel>())
+            }
+            val searchFor = remember {
+                mutableStateOf("")
             }
             //current page number
             val page = remember {
@@ -76,10 +75,13 @@ class MainActivity : ComponentActivity() {
             ) {
                 //the number of pages with posts
                 var pageNum = getPageAmount(mailList)
-                //searchLine(page number)
-                pageSearch(pageNum, page)
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    //searchLine(page number)
+                    pageSearch(pageNum, page)
+                    mailSearch(searchFor)
+                }
                 //posts list
-                postsBuild(items = mailList, page)
+                postsBuild(items = mailList, page, searchFor)
                 //navigation
                 navbar(pageNum, page)
             }
@@ -91,6 +93,7 @@ class MainActivity : ComponentActivity() {
 fun postsBuild(
     items: MutableState<List<MailModel>>,
     page: MutableState<Int>,
+    searchFor: MutableState<String>
 ) {
     val visible = remember {
         mutableStateOf(items.value)
@@ -101,8 +104,14 @@ fun postsBuild(
                 .padding(top = 12.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            if (items.value.size > 10) {
-                visible.value = getCurrentList(page.value.toString().toInt(), items.value)
+            //Checking for email searching
+            if(searchFor.value.isEmpty()) {
+                if (items.value.size > 10) {
+                    visible.value = getCurrentList(page.value.toString().toInt(), items.value)
+                }
+            }else{
+                visible.value = searchForEmail(searchFor, items)
+                searchFor.value = String()
             }
             itemsIndexed(
                 visible.value
@@ -113,6 +122,16 @@ fun postsBuild(
     }
 }
 
+//find all posts with same email
+fun searchForEmail(searchFor: MutableState<String>, items: MutableState<List<MailModel>>): MutableList<MailModel>{
+    val list = mutableListOf<MailModel>()
+    items.value.forEach {
+        if(it.email.contains(searchFor.value)){
+            list.add(it)
+        }
+    }
+    return list
+}
 
 @Composable
 fun postElement(item: MailModel) {
@@ -219,7 +238,7 @@ fun pageSearch(pageNum: Int, page: MutableState<Int>) {
     var text = remember { mutableStateOf("") }
 
     val change: (String) -> Unit = { it ->
-        //check that input datat is correct
+        //check that input data is correct
         if (!it.contains(" ") && it != "" && !it.contains("\n") && !it.contains(".") && !it.contains(
                 ","
             ) && !it.contains("-")
@@ -251,6 +270,43 @@ fun pageSearch(pageNum: Int, page: MutableState<Int>) {
             trailingIcon = {
                 Icon(
                     painter = painterResource(id = R.drawable.baseline_find_in_page_24),
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(14.dp)
+                )
+            }
+        )
+    }
+}
+
+@Composable
+fun mailSearch(searchFor: MutableState<String>) {
+
+    var text = remember { mutableStateOf("") }
+
+
+    val change: (String) -> Unit = { it ->
+        text.value = it
+        if (it.isNotEmpty()) {
+            searchFor.value = it
+        }else{
+            searchFor.value= ""
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth(0.85f)
+            .fillMaxHeight(0.07f)
+    ) {
+        TextField(
+            value = text.value,
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Email),
+            onValueChange = change,
+            trailingIcon = {
+                Icon(
+                    painter = painterResource(id = R.drawable.baseline_alternate_email_24),
                     contentDescription = null,
                     tint = Color.White,
                     modifier = Modifier.size(14.dp)
