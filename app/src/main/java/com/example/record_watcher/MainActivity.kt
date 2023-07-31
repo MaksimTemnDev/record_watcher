@@ -4,17 +4,17 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Card
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
-import androidx.compose.material.icons.Icons
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -35,7 +35,6 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.example.record_watcher.api.JsonManajer
 import com.example.record_watcher.api.MailModel
-import java.sql.Timestamp
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -46,6 +45,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             val mailList = remember {
                 mutableStateOf(listOf<MailModel>())
+            }
+            val page = remember {
+                mutableStateOf(1)
             }
             manager.connect(applicationContext, mailList)
             val window = this.window
@@ -63,8 +65,9 @@ class MainActivity : ComponentActivity() {
                         )
                     )
             ) {
-                menuBuild(items = mailList)
-                navbar()
+                menuBuild(items = mailList, page)
+                var pageNum = getPageAmount(mailList)
+                navbar(pageNum, page)
             }
         }
     }
@@ -73,15 +76,22 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun menuBuild(
     items: MutableState<List<MailModel>>,
+    page: MutableState<Int>,
 ) {
+    val visible = remember {
+        mutableStateOf(items.value)
+    }
     Box(modifier = Modifier.fillMaxHeight(0.92f)) {
         LazyColumn(
             modifier = Modifier
                 .padding(top = 12.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
+            if (items.value.size > 10) {
+                visible.value = getCurrentList(page.value.toString().toInt(), items.value)
+            }
             itemsIndexed(
-                items.value
+                visible.value
             ) { _, item ->
                 menuElement(item)
             }
@@ -188,24 +198,28 @@ fun menuElement(item: MailModel) {
     }
 }
 
-@Preview
 @Composable
-fun navbar() {
+fun navbar(num: Int, pageNum: MutableState<Int>) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 10.dp, end = 10.dp, bottom = 10.dp, top = 4.dp)
+            .padding(start = 10.dp, end = 10.dp, bottom = 15.dp, top = 4.dp)
             .clip(RoundedCornerShape(22.dp))
             .background(Color.LightGray),
         contentAlignment = Alignment.Center
     ) {
-        Row(horizontalArrangement = Arrangement.SpaceBetween) {
-            Box(contentAlignment = Alignment.Center,
+        Row(
+            modifier = Modifier.padding(vertical = 3.dp),
+            horizontalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .size(38.dp)
                     .clip(CircleShape)
                     .background(Color.Black)
-                    .padding(vertical = 3.dp)) {
+                    .padding(vertical = 3.dp)
+            ) {
                 Icon(
                     painter = painterResource(id = R.drawable.baseline_arrow_left_24),
                     contentDescription = "Back",
@@ -213,14 +227,32 @@ fun navbar() {
                     modifier = Modifier.size(34.dp)
                 )
             }
-            Box(contentAlignment = Alignment.Center,
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(0.7f)
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(25.dp)
+            ) {
+                for (i in 1..num) {
+                    Box(modifier = Modifier
+                        .padding(top = 6.dp)
+                        .clickable {
+                            pageNum.value = i
+                        }) {
+                        Text(text = i.toString(), fontSize = 17.sp)
+                    }
+                }
+            }
+            Box(
+                contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .size(38.dp)
                     .clip(CircleShape)
                     .background(Color.Black)
-                    .padding(vertical = 3.dp)) {
+                    .padding(vertical = 3.dp)
+            ) {
                 Icon(
-                    painter = painterResource(id = R.drawable.baseline_arrow_left_24),
+                    painter = painterResource(id = R.drawable.baseline_arrow_right_24),
                     contentDescription = "Back",
                     tint = Color.White,
                     modifier = Modifier.size(34.dp)
@@ -234,4 +266,27 @@ fun navbar() {
 @Composable
 fun DefaultPreview() {
 
+}
+
+fun getCurrentList(num: Int, mailList: List<MailModel>): List<MailModel> {
+    val bufferList = mutableListOf<MailModel>()
+    if (num == 0) {
+        for (i in 0..(num * 10 - 1)) {
+            bufferList.add(mailList[i])
+        }
+    } else {
+        for (i in (num-1) * 10..num * 10 - 1) {
+            bufferList.add(mailList[i])
+        }
+    }
+    return bufferList
+}
+
+fun getPageAmount(mailList: MutableState<List<MailModel>>): Int {
+    val size = mailList.value.size
+    var pageAmount = size / 10
+    if (size % 10 != 0) {
+        pageAmount += 1
+    }
+    return pageAmount
 }
