@@ -219,6 +219,11 @@ fun navbar(num: Int, pageNum: MutableState<Int>) {
                     .clip(CircleShape)
                     .background(Color.Black)
                     .padding(vertical = 3.dp)
+                    .clickable {
+                        if(pageNum.value>1){
+                            pageNum.value--
+                        }
+                    }
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.baseline_arrow_left_24),
@@ -239,7 +244,7 @@ fun navbar(num: Int, pageNum: MutableState<Int>) {
                         .clickable {
                             pageNum.value = i
                         }) {
-                        Text(text = i.toString(), fontSize = 17.sp)
+                        Text(text = i.toString(), fontSize = 17.sp, color = if (pageNum.value == i) {Color.White} else {Color.Black})
                     }
                 }
             }
@@ -250,6 +255,11 @@ fun navbar(num: Int, pageNum: MutableState<Int>) {
                     .clip(CircleShape)
                     .background(Color.Black)
                     .padding(vertical = 3.dp)
+                    .clickable {
+                        if(pageNum.value<num){
+                            pageNum.value++
+                        }
+                    }
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.baseline_arrow_right_24),
